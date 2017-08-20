@@ -1,0 +1,8 @@
+location ^~ /.well-known/acme-challenge/ {
+    default_type "text/plain";
+    root         {{ le_payload_root | dirname }};
+}
+
+location = /.well-known/acme-challenge/ {
+    return 404;
+}

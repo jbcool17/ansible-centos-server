@@ -1,0 +1,25 @@
+---
+language: python
+python: "2.7"
+
+sudo: true
+
+services:
+  - docker
+
+addons:
+  apt:
+    packages:
+    - python-pip
+
+install:
+  - sudo pip install ansible
+  - sudo pip install docker-py==1.9.0
+  - ansible-galaxy install hxpro.epel
+  - ansible-galaxy install hxpro.phpfpm
+
+script:
+  - ansible-playbook test.yml
+
+notifications:
+  webhooks: https://galaxy.ansible.com/api/v1/notifications/

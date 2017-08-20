@@ -1,0 +1,35 @@
+---
+- name: Delete pool
+  file:
+    path="{{ phpfpm_etc }}/php-fpm.d/{{ pool.name }}.conf"
+    state=absent
+  when: pool.absent is defined
+
+- name: Check pools variables
+  assert:
+    that:
+      - pool.listen is defined
+      - pool.pm is defined
+    msg: "Check your pool definition."
+  when: pool.absent is not defined
+
+- seport:
+    ports: "{{ pool.listen.address.split(':')[1]|int }}"
+    proto: tcp
+    setype: http_port_t
+    state: "{{ 'present' if pool.absent is not defined else 'absent' }}"
+  when: selinux and pool.absent is not defined and pool.listen.address.split(':')[0] | ipaddr
+
+- name: "Configuration for php-fpm pool {{ pool.name }}"
+  template:
+    owner={{ phpfpm_user }}
+    group={{ phpfpm_group }}
+    src="pool.conf.j2"
+    dest="{{ phpfpm_etc }}/php-fpm.d/{{ pool.name }}.conf"
+  when: pool.absent is not defined
+  notify: restart php-fpm
+
+- name: set phpfpm_default_listen
+  set_fact:
+    phpfpm_default_listen: "{{ pool.listen.address }}"
+  when: pool.absent is not defined and pool.name is equalto 'www'

@@ -1,0 +1,64 @@
+---
+- name: Check role variables
+  assert:
+    that:
+      - phpfpm_version in phpfpm_supported_versions
+      - phpfpm_log_level in phpfpm_allowed_log_levels
+      - phpfpm_pools is defined
+    msg: "Please read the role documentation, if you still cannot understand why role failed, add your issue."
+
+- name: Read version specific variables
+  include_vars: "{{ phpfpm_version }}.yml"
+
+- name: Install remi-repo
+  package: name=https://rpms.remirepo.net/enterprise/remi-release-7.rpm state=installed
+  when: ansible_distribution == 'CentOS'
+
+- name: Install php extensions
+  package: name="php{{phpfpm_version}}-php-{{ item }}" state=latest
+  with_items: "{{ phpfpm_pkg }}"
+
+- name: Install other packages
+  package: name={{ item }} state=latest
+  with_items:
+    - gettext
+
+- name: Log directory
+  file:
+    name={{ phpfpm_log_path }}
+    state=directory
+    setype=httpd_log_t
+
+- sefcontext:
+    target: '{{ phpfpm_log_path }}(/.*)?'
+    setype: httpd_log_t
+    state: present
+  when: selinux
+
+- seboolean:
+    name: httpd_can_network_connect_db
+    state: yes
+    persistent: yes
+  when: selinux
+
+- name: php-fpm.d pool
+  include: pool.yml
+  with_items: "{{ phpfpm_pools }}"
+  loop_control:
+    loop_var: pool
+
+- name: php-fpm.conf
+  template: src=php-fpm.conf.j2 dest="{{ phpfpm_etc }}/php-fpm.conf"
+    validate="/opt/remi/php{{ phpfpm_version }}/root/usr/sbin/php-fpm -t -c %s"
+  notify: restart php-fpm
+
+- name: Set timezone - php.ini
+  ini_file:
+    path: "{{ phpfpm_etc }}/php.ini"
+    section: Date
+    option: date.timezone
+    value: "{{ phpfpm_timezone }}"
+  notify: restart php-fpm
+
+- name: Start/enable php-fpm service
+  systemd: name="php{{ phpfpm_version }}-php-fpm" enabled=yes state=started daemon_reload=yes

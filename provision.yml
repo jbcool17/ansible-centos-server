@@ -1,0 +1,71 @@
+---
+- name: Update and Install Deps
+  hosts: servers
+  user: 'vagrant'
+  become: true
+  tasks:
+    - name: Yum Update
+      yum:
+        name: '*'
+        state: latest
+  tags:
+    - update
+
+- name: User Managment
+  hosts: servers
+  user: vagrant
+  become: true
+  tasks:
+    - name: ensure wheel group present
+      group:
+        name: wheel
+        state: present
+    - name: create webmaster user
+      user:
+        name: webmaster
+        shell: /bin/bash
+        state: present
+    - name: Place Key
+      authorized_key: user=webmaster key="{{ lookup('file', './files/authorized_keys') }}"
+    - name: Creates directory
+      file:
+        path: /var/www
+        state: directory
+        owner: nginx
+        group: nginx
+        mode: 0755
+        recurse: yes
+    - name: Create Test Web Dir
+      file:
+        path: /var/www/test
+        state: directory
+        owner: webmaster
+        group: webmaster
+        mode: 0755
+    - name: Copy Site
+      copy:
+        src: ./files/index.html
+        dest: /var/www/test
+        owner: webmaster
+        group: webmaster
+        mode: 0644
+
+- name: Install and Setup Nginx
+  hosts: servers
+  user: vagrant
+  become: true
+  roles:
+    - { role: hxpro.nginx }
+
+- name: Firewall Setup
+  hosts: servers
+  user: vagrant
+  become: true
+  tasks:
+    - name: Enable firewalld
+      service: name=firewalld state=started enabled=yes
+    - name: Add Firewall Rules
+      command: firewall-cmd --zone=public --permanent --add-service=http --add-service=https
+    - name: Restart Firewalld
+      service: name=firewalld state=restarted
+      

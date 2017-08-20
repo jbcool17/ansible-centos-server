@@ -1,0 +1,32 @@
+---
+- name: Install nginx
+  package: name=nginx state=latest
+
+- name: Nginx config
+  template:
+    src=nginx.conf.j2
+    dest=/etc/nginx/nginx.conf
+  notify: reload nginx
+
+- name: Nginx default config
+  template:
+    src=default.conf.j2
+    dest=/etc/nginx/conf.d/default.conf
+  notify: reload nginx
+
+- name: LE payload root folder
+  file:
+    dest: "{{ le_payload_root }}"
+    state: directory
+  when: le_payload_root is defined
+
+- name: Acme snippet
+  template:
+    src=acme_snippet.j2
+    dest=/etc/nginx/acme_snippet.conf
+  when: le_payload_root is defined
+  notify: reload nginx
+  register: nginx_acme_snippet
+
+- name: Start/enable nginx service
+  service: name=nginx enabled=yes state=started  

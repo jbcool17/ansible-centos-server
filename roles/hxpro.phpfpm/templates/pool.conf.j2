@@ -1,0 +1,93 @@
+{{ ansible_managed | comment('plain', decoration='; ') }}
+{{ (pool.description | comment('plain', decoration='; ')) if pool.description is defined else '' }}
+
+[{{ pool.name }}]
+user = {{ pool.user | default(phpfpm_user) }}
+group = {{ pool.group | default(phpfpm_group) }}
+listen = {{ pool.listen.address | mandatory }}
+listen.allowed_clients = {{ pool.listen.allowed_clients | default('127.0.0.1') }}
+{% if pool.listen.owner is defined %}
+listen.owner = {{ pool.listen.owner }}
+{% endif %}
+{% if pool.listen.group is defined %}
+listen.group = {{ pool.listen.group }}
+{% endif %}
+{% if pool.listen.mode is defined %}
+listen.mode = {{ pool.listen.mode }}
+{% endif %}
+
+{% if pool.pm.static is defined %}
+pm = static
+pm.max_children = {{ pool.pm.max_children | default(50) }}
+pm.max_requests = {{ pool.pm.max_requests | default(0) }}
+{% elif pool.pm.ondemand is defined %}
+pm = ondemand
+pm.max_children = {{ pool.pm.max_children | default(50) }}
+{% elif pool.pm.dynamic is defined %}
+pm = dynamic
+pm.max_children = {{ pool.pm.max_children | default(50) }}
+pm.start_servers = {{ pool.pm.start_servers | default(5) }}
+pm.min_spare_servers = {{ pool.pm.min_spare_servers | default(5) }}
+pm.max_spare_servers = {{ pool.pm.max_spare_servers | default(35) }}
+pm.max_requests = {{ pool.pm.max_requests | default(0) }}
+{% else %}
+pm = dynamic
+pm.max_children = 50
+pm.start_servers = 5
+pm.min_spare_servers = 5
+pm.max_spare_servers = 35
+pm.max_requests = 0
+{% endif %}
+
+pm.status_path = {{ pool.pm.status_path if pool.pm.status_path is defined else '/status' }}
+
+{% if pool.ping is defined %}
+ping.path = {{ pool.ping.path if pool.ping.path is defined else '/ping' }}
+ping.response = {{ pool.ping.response | default('pong') }}
+{% endif %}
+
+{% if pool.request_slowlog_timeout is defined %}
+request_slowlog_timeout = {{ pool.request_slowlog_timeout }}
+slowlog = {{ pool.slowlog | default(phpfpm_log_path+pool.name+"-slow.log") }}
+{% endif %}
+
+;request_terminate_timeout = 0
+;rlimit_files = 1024
+;rlimit_core = 0
+
+;chroot =
+;chdir =
+
+catch_workers_output = {{ 'yes' if pool.catch_workers_output is defined and pool.catch_workers_output else 'no' }}
+clear_env = {{ 'yes' if pool.clear_env is defined and pool.clear_env else 'no' }}
+{{ 'security.limit_extensions = ' + pool.security.limit_extensions if pool.security is defined and pool.security.limit_extensions is defined else '' }}
+
+{% if pool.env is defined %}
+{% for env in pool.env %}
+env[{{ env }}] = {{ pool.env[env] }}
+{% endfor %}
+{% endif %}
+
+{% if pool.php_admin_value is defined %}
+{% for admin_value in pool.php_admin_value %}
+php_admin_value[{{ admin_value }}] = {{ pool.php_admin_value[admin_value] }}
+{% endfor %}
+{% endif %}
+
+{% if pool.php_admin_flag is defined %}
+{% for admin_flag in pool.php_admin_flag %}
+php_admin_flag[{{ admin_flag }}] = {{ pool.php_admin_flag[admin_flag] }}
+{% endfor %}
+{% endif %}
+
+{% if pool.php_flag is defined %}
+{% for flag in pool.php_flag %}
+php_flag[{{ flag }}] = {{ pool.php_flag[flag] }}
+{% endfor %}
+{% endif %}
+
+{% if pool.php_value is defined %}
+{% for value in pool.php_value %}
+php_value[{{ value }}] = {{ pool.php_value[value] }}
+{% endfor %}
+{% endif %}

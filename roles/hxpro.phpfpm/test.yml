@@ -1,0 +1,47 @@
+---
+- name: prepare container for test
+  hosts: localhost
+  gather_facts: no
+  connection: local
+
+  tasks:
+    - name: Create container centos7
+      docker_container:
+        name: centos7
+        image: hxpro/docker-centos
+        #        recreate: yes
+        privileged: true
+        command: /usr/sbin/init
+        volumes:
+          - "/sys/fs/cgroup:/sys/fs/cgroup:ro"
+        state: started
+      tags: always
+
+    - name: add centos7 host
+      add_host: name=centos7 groups=containers
+      tags: always 
+
+- name: php70
+  hosts: containers
+  connection: docker
+  vars:
+    phpfpm_user: apache
+    phpfpm_group: apache
+#    phpfpm_pid: /var/run/php-fpm.pid
+    phpfpm_version: 70
+  roles:
+    - role: "{{ playbook_dir }}"
+
+
+#- name: tear down
+#  hosts: localhost
+#  gather_facts: no
+#  connection: local
+#
+#  tasks:
+#    - name: Destroy containers
+#      docker_container:
+#        name: '{{ item }}'
+#        state: absent
+#      with_items:
+#        - centos7

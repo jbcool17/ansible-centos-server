@@ -1,0 +1,69 @@
+{{ ansible_managed | comment('plain', decoration='; ') }}
+
+{# All relative paths in this configuration file are relative to PHP's install prefix. #}
+
+include={{ phpfpm_etc }}/php-fpm.d/*.conf
+
+[global]
+pid = {{ phpfpm_pid }}
+error_log = {{ phpfpm_error_log }}
+{# Default Value: daemon #}
+;syslog.facility = daemon
+{# Default Value: php-fpm #}
+;syslog.ident = php-fpm
+{# Possible Values: alert, error, warning, notice, debug #}
+log_level = {{ phpfpm_log_level }}
+emergency_restart_threshold = {{ phpfpm_emergency_restart_threshold }}
+{#
+ Default Unit: seconds
+ Default Value: 0
+#}
+emergency_restart_interval = {{ phpfpm_emergency_restart_interval }}
+{#
+ Default Unit: seconds
+ Default Value: 0
+#}
+process_control_timeout = {{ phpfpm_process_control_timeout }}
+{#
+ Note: A value of 0 indicates no limit
+ Default Value: 0
+#}
+process.max = {{ phpfpm_process_max }}
+{# Default Value: no set #}
+process.priority = {{ phpfpm_process_priority }}
+
+{# Default Value: yes #}
+daemonize = {{ 'yes' if phpfpm_daemonize else 'no' }}
+{#
+ Set open file descriptor rlimit for the master process.
+ Default Value: system defined value
+#}
+{% if phpfpm_rlimit_files is defined %}
+rlimit_files = {{ phpfpm_rlimit_files }}
+{% endif %}
+{#
+ Set max core size rlimit for the master process.
+ Possible Values: 'unlimited' or an integer greater or equal to 0
+ Default Value: system defined value
+#}
+{% if phpfpm_rlimit_core is defined %}
+rlimit_core = {{ phpfpm_rlimit_core }}
+{% endif %}
+{#
+ Specify the event mechanism FPM will use. The following is available:
+ - select     (any POSIX os)
+ - poll       (any POSIX os)
+ - epoll      (linux >= 2.5.44)
+ Default Value: not set (auto detection)
+#}
+;events.mechanism = epoll
+
+{#
+ When FPM is build with systemd integration, specify the interval,
+ in second, between health report notification to systemd.
+ Set to 0 to disable.
+ Available Units: s(econds), m(inutes), h(ours)
+ Default Unit: seconds
+ Default value: 10
+#}
+systemd_interval = {{ phpfpm_systemd_interval }}

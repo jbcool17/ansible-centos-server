@@ -1,0 +1,21 @@
+galaxy_info:
+  author: Matěj Koudelka
+  description: Install and configure php-fpm from remi repository. Tested on CentOS 7.
+
+  license: license (WTFPL)
+
+  min_ansible_version: 2.0
+
+  platforms:
+    - name: EL
+      versions:
+        - 7
+
+  galaxy_tags: []
+
+dependencies:
+  - name: hxpro.epel
+    src: hxpro.epel
+    when: ansible_os_family == 'RedHat'
+  - name: hxpro.selinux
+    src: hxpro.selinux

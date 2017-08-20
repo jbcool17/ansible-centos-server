@@ -1,0 +1,17 @@
+galaxy_info:
+  author: Matěj Koudelka
+  description: Install epel-release package
+
+  license: license (WTFPL)
+
+  min_ansible_version: 1.2
+
+  platforms:
+    - name: EL
+      versions:
+       - 6
+       - 7
+
+  galaxy_tags: []
+
+dependencies: []

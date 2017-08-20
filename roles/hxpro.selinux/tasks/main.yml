@@ -1,0 +1,14 @@
+---
+- name: getenforce
+  shell: "[ -x /usr/sbin/getenforce ] && /usr/sbin/getenforce"
+  failed_when: false
+  register: getenforce
+  check_mode: no
+  changed_when: False
+
+- set_fact:
+    selinux: "{{ getenforce.stdout == 'Enforcing' }}"
+
+- name: Install selinux packages
+  package: name={{ selinux_pkg }} state=present
+  when: selinux and ansible_os_family == 'RedHat'

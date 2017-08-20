@@ -1,0 +1,46 @@
+---
+- name: prepare container for test
+  hosts: localhost
+  gather_facts: no
+  connection: local
+
+  tasks:
+    - name: Create container centos7
+      docker_container:
+        name: centos7
+        image: centos:7
+        command: tail -f /dev/null
+        state: started
+
+    - name: add centos7 host
+      add_host: name=centos7
+ 
+    - name: Create container centos6
+      docker_container:
+        name: centos6
+        image: centos:6
+        command: tail -f /dev/null
+        state: started
+
+    - name: add centos6 host
+      add_host: name=centos6
+
+- name: test role
+  hosts: centos6,centos7
+  connection: docker
+  roles:
+    - ansible-role-epel
+
+- name: tear down
+  hosts: localhost
+  gather_facts: no
+  connection: local
+
+  tasks:
+    - name: Destroy container centos7
+      docker_container:
+        name: '{{ item }}'
+        state: absent
+      with_items:
+        - centos6
+        - centos7
